@@ -38,26 +38,54 @@
         content: "{{ item }}"
       register: dhcp
 
+    - name: match switchport mode
+      pattern_match:
+        regex: "switchport mode (.+)"
+        content: "{{ item }}"
+      register: mode
+
+    - name: match switchport access vlan
+      pattern_match:
+        regex: "switchport access vlan (.+)"
+        content: "{{ item }}"
+      register: access_vlan
+
+    - name: match switchport trunk allowed vlan
+      pattern_match:
+        regex: "switchport trunk allowed vlan (.+)"
+        content: "{{ item }}"
+      register: trunk_allowed_vlan
+
   loop: "{{ context }}"
   register: matches
 
 - name: template entries as list
   json_template:
     template:
-      - key: "{{ item.name.matches.0 }}"
+      - key: name
+        value: "{{ item.name.matches.0 }}"
+      - key: description
+        value: "{{ item.description.matches.0 }}"
+      - key: enabled
+        value: "{{ not item.enabled.matches }}"
+      - key: switchport
         object:
-          - key: description
-            value: "{{ item.description.matches.0 }}"
-          - key: enabled
-            value: "{{ not item.enabled.matches }}"
-          - key: ipv4
-            object:
-              - key: address
-                value: "{{ item.ipaddr.matches.0 }}"
-              - key: netmask
-                value: "{{ item.ipaddr.matches.1 }}"
-              - key: dhcp
-                value: "{{ item.dhcp.matches != None }}"
+          - key: mode
+            value: "{{ item.mode.matches.0 }}"
+          - key: native_vlan
+            value: "{{ item.native_vlan.matches.0 }}"
+          - key: access_vlan
+            value: "{{ item.access_vlan.matches.0 }}"
+          - key: trunk_allowed_vlans
+            value: "{{ item.trunk_allowed_vlan.matches.0.split(',') }}"
+      - key: ipv4
+        object:
+          - key: address
+            value: "{{ item.ipaddr.matches.0 }}"
+          - key: netmask
+            value: "{{ item.ipaddr.matches.1 }}"
+          - key: dhcp
+            value: "{{ item.dhcp.matches != None }}"
   loop: "{{ matches }}"
   register: interfaces
   extend: cisco_nxos.config
@@ -73,6 +101,16 @@
             value: "{{ item.description.matches.0 }}"
           - key: enabled
             value: "{{ not item.enabled.matches }}"
+          - key: switchport
+            object:
+              - key: mode
+                value: "{{ item.mode.matches.0 }}"
+              - key: native_vlan
+                value: "{{ item.native_vlan.matches.0 }}"
+              - key: access_vlan
+                value: "{{ item.access_vlan.matches.0 }}"
+              - key: trunk_allowed_vlans
+                value: "{{ item.trunk_allowed_vlan.matches.0.split(',') }}"
           - key: ipv4
             object:
               - key: address
@@ -86,3 +124,40 @@
   extend: cisco_nxos.config
   export: yes
   export_as: dict
+
+- name: "template interfaces to cisco_nxos.module.nxos_l2_interface.aggregate"
+  export: yes
+  export_as: list
+  extend: cisco_nxos.module.nxos_l2_interface
+  loop: "{{ cisco_nxos.config.interfaces }}"
+  register: aggregate
+  json_template:
+    template:
+      - key: name
+        value: "{{ item.name }}"
+      - key: mode
+        value: "{{ item.mode }}"
+      - key: native_vlan
+        value: "{{ item.switchport.native_vlan }}"
+      - key: trunk_allowed_vlans
+        value: "{{ item.switchport.trunk_allowed_vlan.split(',') }}"
+      - key: access_vlan
+        value: "{{ item.switchport.access_vlan }}"
+    when:
+      - item.mode is defined
+
+- name: "template interfaces to cisco_nxos.module.nxos_l3_interface.aggregate"
+  export: yes
+  export_as: list
+  extend: cisco_nxos.module.nxos_l3_interface
+  loop: "{{ cisco_nxos.config.interfaces }}"
+  register: aggregate
+  json_template:
+    template:
+      - key: name
+        value: "{{ item.id.matches.0 }}"
+      - key: ipv4
+        value: "{{ item.ipv4.address }}/{{ item.ipv4.netmask }}"
+    when:
+      - item.ipv4.address is defined
+      - item.ipv4.netmask is defined
