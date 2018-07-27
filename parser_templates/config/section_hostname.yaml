@@ -1,0 +1,14 @@
+---
+- name: match sections
+  pattern_match:
+    regex: "hostname (.+)"
+  register: hostname
+
+- name: template entries
+  json_template:
+    template:
+      - key: hostname
+        value: "{{ hostname.matches.0 }}"
+  register: config
+  extend: cisco_nxos
+  export: yes

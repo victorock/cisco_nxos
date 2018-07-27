@@ -1,9 +1,4 @@
 ---
-- name: match sections
-  pattern_match:
-    regex: "hostname (.+)"
-  register: hostname
-
 - name: match ip domain-name <str>
   pattern_match:
     regex: "ip domain-name (.+)"
@@ -22,17 +17,13 @@
   register: name_servers
   export: yes
 
-- name: template entries
+- name: template entries ip
   json_template:
     template:
-      - key: hostname
-        value: "{{ hostname.matches.0 }}"
       - key: domain_name
         value: "{{ domain_name.matches.0 }}"
       - key: domain_lookup
         object:
-          - key: enabled
-            value: "{{ domain_lookup.matches | bool }}"
           - key: vrf
             value: "{{ domain_lookup.matches.0 }}"
           - key: source_interface
@@ -44,6 +35,6 @@
           - key: vrf
             value: "{{ item.matches.0 }}"
         repeat_for: "{{ name_servers }}"
-  register: system
+  register: ip
   extend: cisco_nxos.config
   export: yes
