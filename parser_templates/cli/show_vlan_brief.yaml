@@ -31,11 +31,11 @@
   register: brief
   json_template:
     template:
-      - key: id
-        value: "{{ item.fact.id }}"
-      - key: name
-        value: "{{ item.fact.name }}"
-      - key: status
-        value: "{{ item.fact.status }}"
-      - key: ports
-        value: "{{ item.fact.ports.replace('\n', ',').replace(' ', '').replace('Eth', 'Ethernet').split(',')[:-1] }}"
+      - key: "{{ item.fact.id }}"
+        object:
+          - key: name
+            value: "{{ item.fact.name }}"
+          - key: status
+            value: "{{ item.fact.status }}"
+          - key: ports
+            value: "{{ item.fact.ports.replace('\n', ',').replace(' ', '').replace('Eth', 'Ethernet').split(',')[:-1] }}"
