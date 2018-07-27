@@ -46,12 +46,31 @@
         content: "{{ item }}"
       register: vn_segment
 
-- name: "template to cisco_nxos.config.vlans"
+- name: "template to cisco_nxos.config.vlans as list"
   export: yes
   export_as: list
   extend: cisco_nxos.config
   loop: "{{ config_values }}"
   register: vlans
+  json_template:
+    template:
+      - key: vlan_id
+        value: "{{ item.id.matches.0 }}"
+      - key: mode
+        value: "{{ item.mode.matches.0 }}"
+      - key: vlan_state
+        valye: "{{ item.state.matches.0 }}"
+      - key: vlan_name
+        value: "{{ item.name.matches.0 }}"
+      - key: mapped_vni
+        value: "{{ item.vn_segment.matches.0 }}"
+
+- name: "template to cisco_nxos.config.vlan as dict"
+  export: yes
+  export_as: dict
+  extend: cisco_nxos.config
+  loop: "{{ config_values }}"
+  register: vlan
   json_template:
     template:
       - key: vlan_id
