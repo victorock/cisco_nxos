@@ -54,15 +54,15 @@
   register: vlans
   json_template:
     template:
-      - key: vlan_id
+      - key: id
         value: "{{ item.id.matches.0 }}"
       - key: mode
         value: "{{ item.mode.matches.0 }}"
-      - key: vlan_state
+      - key: state
         valye: "{{ item.state.matches.0 }}"
-      - key: vlan_name
+      - key: name
         value: "{{ item.name.matches.0 }}"
-      - key: mapped_vni
+      - key: vn_segment
         value: "{{ item.vn_segment.matches.0 }}"
 
 - name: "template to cisco_nxos.config.vlan as dict"
@@ -71,6 +71,25 @@
   extend: cisco_nxos.config
   loop: "{{ config_values }}"
   register: vlan
+  json_template:
+    template:
+      - key: "{{ item.id.matches.0 }}"
+        object:
+          - key: mode
+            value: "{{ item.mode.matches.0 }}"
+          - key: state
+            valye: "{{ item.state.matches.0 }}"
+          - key: name
+            value: "{{ item.name.matches.0 }}"
+          - key: vn_segment
+            value: "{{ item.vn_segment.matches.0 }}"
+
+- name: "template to cisco_nxos.module.nxos_vlan.aggregate"
+  export: yes
+  export_as: list
+  extend: cisco_nxos.module.nxos_vlan
+  loop: "{{ cisco_nxos.config.vlans }}"
+  register: aggregate
   json_template:
     template:
       - key: vlan_id
@@ -83,3 +102,5 @@
         value: "{{ item.name.matches.0 }}"
       - key: mapped_vni
         value: "{{ item.vn_segment.matches.0 }}"
+      - key: enabled
+        value: "{{ not item.enabled.matches }}"
