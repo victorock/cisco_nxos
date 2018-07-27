@@ -9,6 +9,6 @@
     template:
       - key: hostname
         value: "{{ hostname.matches.0 }}"
-  register: config
-  extend: cisco_nxos
+  register: nxos_system
+  extend: cisco_nxos.config
   export: yes
