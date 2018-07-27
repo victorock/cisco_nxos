@@ -38,3 +38,16 @@
   register: ip
   extend: cisco_nxos.config
   export: yes
+
+- name: "template to cisco_nxos.module.nxos_system"
+  json_template:
+    template:
+      - key: domain_name
+        value: "{{ cisco_nxos.config.domain_name }}"
+      - key: domain_lookup
+        value: "{{ cisco_nxos.config.domain_lookup }}"
+      - key: name_servers
+        value: "{{ cisco_nxos.config.name_servers }}"
+  register: nxos_system
+  extend: cisco_nxos.module
+  export: yes
