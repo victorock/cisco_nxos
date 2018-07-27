@@ -4,11 +4,20 @@
     regex: "hostname (.+)"
   register: hostname
 
-- name: template entries
+- name: template hostname
   json_template:
     template:
       - key: hostname
         value: "{{ hostname.matches.0 }}"
+  register: config
+  extend: cisco_nxos
+  export: yes
+
+- name: "template hostname to cisco_nxos.module.nxos_system"
+  json_template:
+    template:
+      - key: hostname
+        value: "{{ cisco_nxos.config.hostname }}"
   register: nxos_system
-  extend: cisco_nxos.config
+  extend: cisco_nxos.module
   export: yes
