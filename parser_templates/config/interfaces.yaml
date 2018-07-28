@@ -16,7 +16,7 @@
 
     - name: match description
       pattern_match:
-        regex: "description (.+)"
+        regex: 'description (.+)'
         content: "{{ item }}"
       register: description
 
@@ -28,15 +28,39 @@
 
     - name: match ip address
       pattern_match:
-        regex: "ip address (\\S+)/(\\d+)"
+        regex: 'ip address (\S+)/(\d+)'
         content: "{{ item }}"
       register: ipaddr
 
     - name: match ip address dhcp
       pattern_match:
-        regex: "ip address (dhcp)"
+        regex: 'ip address (dhcp)'
         content: "{{ item }}"
       register: dhcp
+
+    - name: match switchport mode
+      pattern_match:
+        regex: 'switchport mode (\w+)'
+        content: "{{ item }}"
+      register: mode
+
+    - name: match switchport access vlan
+      pattern_match:
+        regex: 'switchport access vlan (\d+)'
+        content: "{{ item }}"
+      register: access_vlan
+
+    - name: match switchport trunk allowed vlan
+      pattern_match:
+        regex: 'switchport trunk allowed vlan (.+)'
+        content: "{{ item }}"
+      register: trunk_allowed_vlan
+
+    - name: match switchport trunk allowed vlan add
+      pattern_match:
+        regex: 'switchport trunk allowed vlan add (.+)'
+        content: "{{ item }}"
+      register: trunk_allowed_vlan_add
 
   loop: "{{ context }}"
   register: matches
@@ -44,22 +68,32 @@
 - name: template entries as list
   json_template:
     template:
-      - key: "{{ item.name.matches.0 }}"
+      - key: name
+        value: "{{ item.name.matches.0 }}"
+      - key: description
+        value: "{{ item.description.matches.0 }}"
+      - key: enabled
+        value: "{{ not item.enabled.matches }}"
+      - key: switchport
         object:
-          - key: interface
-            value: "{{ item.name.matches.0 }}"
-          - key: description
-            value: "{{ item.description.matches.0 }}"
-          - key: enabled
-            value: "{{ not item.enabled.matches }}"
-          - key: ipv4
-            object:
-              - key: address
-                value: "{{ item.ipaddr.matches.0 }}"
-              - key: netmask
-                value: "{{ item.ipaddr.matches.1 }}"
-              - key: dhcp
-                value: "{{ item.dhcp.matches != None }}"
+          - key: mode
+            value: "{{ item.mode.matches.0 }}"
+          - key: native_vlan
+            value: "{{ item.native_vlan.matches.0 }}"
+          - key: access_vlan
+            value: "{{ item.access_vlan.matches.0 }}"
+          - key: trunk_allowed_vlans
+            value: "{{ item.trunk_allowed_vlan.matches.0.split(',') }}"
+          - key: trunk_allowed_vlans_add
+            value: "{{ item.trunk_allowed_vlans_add.matches.0.split(',') }}"
+      - key: ipv4
+        object:
+          - key: address
+            value: "{{ item.ipaddr.matches.0 }}"
+          - key: netmask
+            value: "{{ item.ipaddr.matches.1 }}"
+          - key: dhcp
+            value: "{{ item.dhcp.matches != None }}"
   loop: "{{ matches }}"
   register: interfaces
   extend: cisco_nxos.config
@@ -71,12 +105,24 @@
     template:
       - key: "{{ item.name.matches.0 }}"
         object:
-          - key: interface
+          - key: name
             value: "{{ item.name.matches.0 }}"
           - key: description
             value: "{{ item.description.matches.0 }}"
           - key: enabled
             value: "{{ not item.enabled.matches }}"
+          - key: switchport
+            object:
+              - key: mode
+                value: "{{ item.mode.matches.0 }}"
+              - key: native_vlan
+                value: "{{ item.native_vlan.matches.0 }}"
+              - key: access_vlan
+                value: "{{ item.access_vlan.matches.0 }}"
+              - key: trunk_allowed_vlans
+                value: "{{ item.trunk_allowed_vlan.matches.0.split(',') }}"
+              - key: trunk_allowed_vlans_add
+                value: "{{ item.trunk_allowed_vlans_add.matches.0.split(',') }}"
           - key: ipv4
             object:
               - key: address
