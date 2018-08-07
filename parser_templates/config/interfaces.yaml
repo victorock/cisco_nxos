@@ -52,13 +52,13 @@
 
     - name: match lldp transmit
       pattern_match:
-        regex: 'lldp transmit (\w+)'
+        regex: '(no) lldp transmit'
         content: "{{ item }}"
       register: lldp_transmit
 
     - name: match lldp receive
       pattern_match:
-        regex: 'lldp receive (\w+)'
+        regex: '(no) lldp receive'
         content: "{{ item }}"
       register: lldp_receive
 
@@ -237,9 +237,9 @@
       - key: lldp
         object:
           - key: transmit
-            value: "{{ item.lldp_transmit.matches.0 }}"
+            value: "{{ not item.lldp_transmit.matches }}"
           - key: receive
-            value: "{{ item.lldp_receive.matches.0 }}"
+            value: "{{ not item.lldp_receive.matches }}"
           - key: dcbx_version
             value: "{{ item.lldp_dcbx_version.matches.0 }}"
       - key: priority_flow_control
